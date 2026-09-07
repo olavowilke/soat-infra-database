@@ -1,0 +1,12 @@
+environment                  = "homolog"
+aws_region                   = "us-east-1"
+engine_version               = "16.4"
+instance_class               = "db.t3.micro"
+allocated_storage            = 20
+max_allocated_storage        = 50
+multi_az                     = false
+backup_retention_days        = 3
+deletion_protection          = false
+performance_insights_enabled = false
+max_connections_alarm        = 100
+alarm_email                  = ""

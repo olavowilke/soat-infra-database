@@ -1,0 +1,70 @@
+name: CD - Deploy RDS PostgreSQL
+
+# Deploy automatico das branches de homologacao e producao (requisito da Fase 3).
+#   homolog -> ambiente homolog
+#   main    -> ambiente prod
+# Ordem entre stacks: infra-k8s -> infra-database -> lambda-auth.
+on:
+  push:
+    branches: [main, homolog]
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente alvo
+        required: true
+        default: homolog
+        type: choice
+        options: [homolog, prod]
+
+permissions:
+  id-token: write # OIDC para assumir a role na AWS, sem chave estatica
+  contents: read
+
+jobs:
+  deploy:
+    name: terraform apply
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.ambiente || (github.ref_name == 'main' && 'prod' || 'homolog') }}
+    env:
+      AMBIENTE: ${{ github.event.inputs.ambiente || (github.ref_name == 'main' && 'prod' || 'homolog') }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: terraform init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=infra-database/${AMBIENTE}/terraform.tfstate" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      - name: terraform plan
+        working-directory: terraform
+        run: terraform plan -input=false -var-file=environments/${AMBIENTE}.tfvars -out=tfplan
+
+      - name: terraform apply
+        working-directory: terraform
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Resumo do deploy
+        working-directory: terraform
+        run: |
+          {
+            echo "### Deploy do banco gerenciado (${AMBIENTE})"
+            echo ""
+            echo "- Endpoint: $(terraform output -raw db_endpoint)"
+            echo "- Secret ARN: $(terraform output -raw db_secret_arn)"
+          } >> "$GITHUB_STEP_SUMMARY"

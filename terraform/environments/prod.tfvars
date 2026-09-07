@@ -1,0 +1,12 @@
+environment                  = "prod"
+aws_region                   = "us-east-1"
+engine_version               = "16.4"
+instance_class               = "db.t3.medium"
+allocated_storage            = 50
+max_allocated_storage        = 200
+multi_az                     = true
+backup_retention_days        = 14
+deletion_protection          = true
+performance_insights_enabled = true
+max_connections_alarm        = 200
+alarm_email                  = ""
