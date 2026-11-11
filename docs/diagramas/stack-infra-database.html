@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>infra-database - Diagrama da stack</title>
+<!-- Fonte do PNG docs/diagramas/stack-infra-database.png.
+     Gerar de novo: chrome --headless --screenshot=stack-infra-database.png --window-size=1400,820 --hide-scrollbars stack-infra-database.html -->
+<style>
+  html, body { margin: 0; background: #ffffff; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; width: 1400px; height: 820px; }
+  h1 { margin: 0; padding: 18px 30px; font-size: 24px; color: #fff;
+       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  svg { display: block; }
+  text { font-family: "Segoe UI", system-ui, sans-serif; fill: #1a202c; }
+  .t { font-size: 15px; font-weight: 600; }
+  .s { font-size: 12.5px; fill: #2d3748; }
+  .g { font-size: 13px; font-weight: 700; fill: #4a5568; letter-spacing: .5px; }
+  .w { fill: #fff; }
+  .lbl { font-size: 12px; fill: #4a5568; }
+</style>
+</head>
+<body>
+<h1>infra-database — Diagrama da stack (RDS do OS Service)</h1>
+<svg width="1400" height="756" viewBox="0 0 1400 756">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/>
+    </marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#38a169"/>
+    </marker>
+    <marker id="ay" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b7791f"/>
+    </marker>
+  </defs>
+
+  <!-- ===== Coluna 1: infra-k8s (antes) ===== -->
+  <rect x="30" y="30" width="300" height="420" rx="14" fill="#f7fafc" stroke="#a0aec0" stroke-dasharray="7 5" stroke-width="2"/>
+  <text x="50" y="58" class="g">infra-k8s (aplicado antes)</text>
+
+  <rect x="60" y="80" width="240" height="96" rx="10" fill="#4299e1"/>
+  <text x="180" y="110" text-anchor="middle" class="t w">VPC + sub-redes privadas</text>
+  <text x="180" y="134" text-anchor="middle" class="s w">SSM network/vpc-id</text>
+  <text x="180" y="154" text-anchor="middle" class="s w">SSM network/private-subnet-ids</text>
+
+  <rect x="60" y="210" width="240" height="110" rx="10" fill="#fefcbf" stroke="#d69e2e"/>
+  <text x="180" y="240" text-anchor="middle" class="t">SG db-client ("crachá")</text>
+  <text x="180" y="264" text-anchor="middle" class="s">sem regra de entrada própria</text>
+  <text x="180" y="284" text-anchor="middle" class="s">SSM network/db-client-sg-id</text>
+
+  <text x="180" y="360" text-anchor="middle" class="s">esta stack lê os três valores</text>
+  <text x="180" y="380" text-anchor="middle" class="s">do SSM (data "aws_ssm_parameter"),</text>
+  <text x="180" y="400" text-anchor="middle" class="s">sem remote state entre repositórios</text>
+
+  <!-- ===== Coluna 2: esta stack ===== -->
+  <rect x="380" y="30" width="620" height="700" rx="14" fill="#fffaf0" stroke="#ed8936" stroke-width="2"/>
+  <text x="400" y="58" class="g">infra-database (esta stack)</text>
+
+  <rect x="410" y="80" width="250" height="96" rx="10" fill="#ed8936"/>
+  <text x="535" y="112" text-anchor="middle" class="t w">DB Subnet Group</text>
+  <text x="535" y="136" text-anchor="middle" class="s w">sub-redes privadas da VPC</text>
+
+  <rect x="720" y="80" width="250" height="110" rx="10" fill="#ed8936"/>
+  <text x="845" y="110" text-anchor="middle" class="t w">Security Group do RDS</text>
+  <text x="845" y="134" text-anchor="middle" class="s w">entrada 5432 só de quem</text>
+  <text x="845" y="154" text-anchor="middle" class="s w">veste o SG db-client</text>
+
+  <rect x="530" y="250" width="320" height="130" rx="12" fill="#4299e1"/>
+  <text x="690" y="282" text-anchor="middle" class="t w">RDS PostgreSQL 16</text>
+  <text x="690" y="306" text-anchor="middle" class="s w">aws_db_instance.oficina</text>
+  <text x="690" y="326" text-anchor="middle" class="s w">+ parameter group postgres16</text>
+  <text x="690" y="352" text-anchor="middle" class="lbl w">banco do OS Service (oficina-api)</text>
+
+  <path d="M535,176 L620,248" stroke="#4a5568" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M845,190 L770,248" stroke="#4a5568" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="410" y="440" width="260" height="110" rx="10" fill="#9f7aea"/>
+  <text x="540" y="470" text-anchor="middle" class="t w">Secrets Manager</text>
+  <text x="540" y="494" text-anchor="middle" class="s w">usuário e senha (random_password)</text>
+  <text x="540" y="514" text-anchor="middle" class="s w">host, porta e nome do banco</text>
+
+  <rect x="710" y="440" width="260" height="110" rx="10" fill="#9f7aea"/>
+  <text x="840" y="470" text-anchor="middle" class="t w">CloudWatch Alarms</text>
+  <text x="840" y="494" text-anchor="middle" class="s w">CPU, conexões, disco livre,</text>
+  <text x="840" y="514" text-anchor="middle" class="s w">latência de leitura</text>
+  <text x="840" y="536" text-anchor="middle" class="lbl w">SNS por e-mail se alarm_email ≠ ""</text>
+
+  <path d="M640,380 L560,438" stroke="#4a5568" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M740,380 L820,438" stroke="#4a5568" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="470" y="600" width="440" height="106" rx="10" fill="#48bb78"/>
+  <text x="690" y="630" text-anchor="middle" class="t w">SSM Parameter Store (publicado aqui)</text>
+  <text x="690" y="654" text-anchor="middle" class="s w">/oficina/&lt;env&gt;/database/host · port · name</text>
+  <text x="690" y="674" text-anchor="middle" class="s w">/oficina/&lt;env&gt;/database/secret-arn</text>
+
+  <path d="M540,550 L600,598" stroke="#4a5568" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M690,380 C690,450 690,520 690,598" stroke="#4a5568" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- ===== Coluna 3: consumidores (depois) ===== -->
+  <rect x="1050" y="30" width="320" height="700" rx="14" fill="#f7fafc" stroke="#a0aec0" stroke-dasharray="7 5" stroke-width="2"/>
+  <text x="1070" y="58" class="g">Consumidores (aplicados depois)</text>
+
+  <rect x="1080" y="250" width="260" height="110" rx="10" fill="#edf2f7" stroke="#718096"/>
+  <text x="1210" y="280" text-anchor="middle" class="t">oficina-api no EKS</text>
+  <text x="1210" y="304" text-anchor="middle" class="s">dono do banco (OS Service)</text>
+  <text x="1210" y="324" text-anchor="middle" class="s">nós vestem o SG db-client</text>
+
+  <rect x="1080" y="420" width="260" height="130" rx="10" fill="#edf2f7" stroke="#718096"/>
+  <text x="1210" y="450" text-anchor="middle" class="t">lambda-auth</text>
+  <text x="1210" y="474" text-anchor="middle" class="s">lê a tabela clientes</text>
+  <text x="1210" y="494" text-anchor="middle" class="s">(auth faz parte do contexto</text>
+  <text x="1210" y="514" text-anchor="middle" class="s">do OS) · veste o SG db-client</text>
+
+  <!-- SSM -> consumidores -->
+  <path d="M910,640 C1010,640 1010,320 1078,312" stroke="#38a169" stroke-width="2" fill="none" marker-end="url(#ag)"/>
+  <path d="M910,670 C1030,670 1030,490 1078,486" stroke="#38a169" stroke-width="2" fill="none" marker-end="url(#ag)"/>
+  <text x="1210" y="640" text-anchor="middle" class="lbl">os dois leem host e secret-arn</text>
+  <text x="1210" y="658" text-anchor="middle" class="lbl">do SSM antes do deploy</text>
+
+  <!-- consumidores -> RDS (5432) -->
+  <path d="M1078,290 L852,300" stroke="#b7791f" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ay)"/>
+  <path d="M1078,450 C980,420 900,380 850,365" stroke="#b7791f" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#ay)"/>
+  <text x="965" y="282" text-anchor="middle" class="lbl">TCP 5432</text>
+
+  <!-- SG cracha -> SG do RDS -->
+  <path d="M300,250 C500,230 600,200 718,150" stroke="#b7791f" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#ay)"/>
+  <text x="440" y="262" text-anchor="middle" class="lbl">source_security_group_id</text>
+
+  <!-- VPC -> subnet group -->
+  <path d="M300,128 L408,128" stroke="#4a5568" stroke-width="2" marker-end="url(#a)"/>
+</svg>
+</body>
+</html>

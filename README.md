@@ -32,40 +32,10 @@ Aurora Serverless) e o diagrama entidade-relacionamento completo estão em
 
 ## Diagrama da stack
 
-```mermaid
-flowchart TB
-    subgraph infra-k8s["infra-k8s (aplicado antes)"]
-        VPC[VPC + subnets privadas]
-        SG["SG cracha (db-client-sg)"]
-    end
+![Diagrama da stack infra-database: RDS PostgreSQL, Security Groups, Secrets Manager, alarmes e SSM](docs/diagramas/stack-infra-database.png)
 
-    subgraph infra-database["infra-database (esta stack)"]
-        SGDB[Security Group do RDS]
-        SUBG[DB Subnet Group]
-        RDS[(RDS PostgreSQL 16)]
-        SEC[Secrets Manager: credenciais]
-        ALM[CloudWatch Alarms + SNS]
-        SSMOUT["SSM: host / port / name / secret-arn"]
-    end
-
-    subgraph consumidores["Consumidores (aplicados depois)"]
-        EKS[oficina-api no EKS]
-        LAMBDA[lambda-auth]
-    end
-
-    VPC --> SUBG
-    SG -. "source_security_group_id (5432)" .-> SGDB
-    SUBG --> RDS
-    SGDB --> RDS
-    RDS --> SEC
-    RDS --> ALM
-    RDS --> SSMOUT
-    SEC --> SSMOUT
-    SSMOUT --> EKS
-    SSMOUT --> LAMBDA
-    SG -.-> EKS
-    SG -.-> LAMBDA
-```
+O fonte do PNG é [`docs/diagramas/stack-infra-database.html`](docs/diagramas/stack-infra-database.html).
+Para gerar o PNG de novo, rode o Chrome headless com o comando do comentário no topo do HTML.
 
 O SG "cracha" (`db-client-sg-id`, publicado por `infra-k8s`) não tem nenhuma
 regra própria — nós do EKS e a Lambda apenas o vestem. O Security Group do
